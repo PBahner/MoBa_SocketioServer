@@ -1,0 +1,14 @@
+[Unit]
+Description=Modellbahn Steuerung
+After=network-online.target
+
+[Service]
+ExecStart=/bin/python3.9 /home/timo/Dokumente/mobacontrol/main.py
+WorkingDirectory=/home/timo/Dokumente/mobacontrol/
+StandardOutput=inherit
+StandardError=inherit
+Restart=always
+User=timo
+
+[Install]
+WantedBy=multi-user.target
