@@ -1,10 +1,14 @@
 import socketio
 import eventlet
 import time
-import can
 
 sio = socketio.Server(cors_allowed_origins='*') #, logger=True, engineio_logger=True
 app = socketio.WSGIApp(sio)
+
+CAN_ENABLED = True
+
+if CAN_ENABLED:
+    import can
 
 
 class Switches:
@@ -48,6 +52,8 @@ class CanCommunicator:
 
     @staticmethod
     def send_msg(id, data):
+        if not CAN_ENABLED:
+            return
         bustype = 'socketcan'
         channel = 'can0'
         with can.interface.Bus(channel=channel, bustype=bustype, bitrate=125000) as bus:
