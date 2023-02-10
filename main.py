@@ -12,10 +12,16 @@ if CAN_ENABLED:
 
 
 class Switches:
-    def __init__(self, id):
-        self.current_pos = False
-        self.target_pos = False
-        self.id = id
+    __pos = {
+        "+": False,
+        "-": True,
+        "": 2,
+    }
+
+    def __init__(self, switch_id):
+        self.current_pos = self.__pos["+"]
+        self.target_pos = self.__pos["+"]
+        self.id = switch_id
 
     def change_switch_state(self):
         self.target_pos = not self.current_pos
