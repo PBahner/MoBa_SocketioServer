@@ -18,16 +18,23 @@ class Switches:
         "": 2,
     }
 
-    def __init__(self, switch_id):
+    def __init__(self, switch_id, servo_module):
         self.current_pos = self.__pos["+"]
         self.target_pos = self.__pos["+"]
         self.id = switch_id
+        self.servo_module = servo_module
 
     def change_switch_state(self):
         self.target_pos = not self.current_pos
 
 
-switches = [Switches(0), Switches(1), Switches(2), Switches(3), Switches(4), Switches(5), Switches(6)]
+switches = [Switches(0, 0),
+            Switches(1, 0),
+            Switches(2, 0),
+            Switches(3, 1),
+            Switches(4, 1),
+            Switches(5, 0),
+            Switches(6, 0)]
 
 
 class CanCommunicator:
@@ -45,9 +52,13 @@ class CanCommunicator:
 
     @staticmethod
     def send_switch_states():
-        data = [s.target_pos for s in switches]
+        switch_positions = [(s.servo_module, s.target_pos) for s in switches]
+        print(switch_positions)
+        data = [[] for _ in range(max(p[0] for p in switch_positions) + 1)]
+        for module, pos in switch_positions:
+            data[module].append(pos)
         print(data)
-        data = CanCommunicator.bools_to_bytes(data)
+        data = [CanCommunicator.bools_to_bytes(p)[0] for p in data]
         print("data", data)
         if CanCommunicator.send_msg(1, data):
             for switch in switches:
