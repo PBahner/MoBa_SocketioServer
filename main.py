@@ -1,6 +1,7 @@
+import threading
 import socketio
 import eventlet
-import time
+from webserver import *
 
 sio = socketio.Server(cors_allowed_origins='*') #, logger=True, engineio_logger=True
 app = socketio.WSGIApp(sio)
@@ -93,4 +94,8 @@ class Esp32Communicator(socketio.Namespace):
 sio.register_namespace(Esp32Communicator())
 
 if __name__ == '__main__':
+    # initialize webserver thread
+    local_webserver = threading.Thread(target=start_webserver, daemon=False)
+    local_webserver.start()
+
     eventlet.wsgi.server(eventlet.listen(('0.0.0.0', 5000)), app)
