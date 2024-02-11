@@ -87,6 +87,16 @@ turnouts = [Turnout(0, 0, 4, PinReference(0, 2, 0x21, 0), PinReference(0, 2, 0x2
 class CanCommunicator:
     bustype = 'socketcan'
     channel = 'can0'
+    i2c_value_storage = {}
+
+    @staticmethod
+    def bit_write(byte: int, position: int, value: bool) -> int:
+        if value:
+            # Set the bit at the specified position
+            return byte | (1 << position)
+        else:
+            # Clear the bit at the specified position
+            return byte & ~(1 << position)
 
     @staticmethod
     def bools_to_bytes(data_list):
@@ -105,6 +115,30 @@ class CanCommunicator:
     def request_inputs(module_id, input_type, input_address):
         data = [module_id + input_type << 4, input_address]
         CanCommunicator.send_msg(12, data)
+
+    @staticmethod
+    def write_i2c_pin(output_reference: PinReference, output_value):
+        module_id = output_reference.module_id
+        output_type = output_reference.interface_type
+        output_address = output_reference.address
+
+        # check if module_id already exists
+        if module_id not in CanCommunicator.i2c_value_storage:
+            CanCommunicator.i2c_value_storage[module_id] = {}
+        # get current output value
+        old_value = CanCommunicator.i2c_value_storage.get(module_id, {}).get(output_address, 0)
+        new_value = CanCommunicator.bit_write(old_value,
+                                              output_reference.pin_no,
+                                              output_value)
+        # write new value to storage
+        CanCommunicator.i2c_value_storage[module_id].update({output_address: new_value})
+
+        data = [module_id + output_type << 4, output_address, new_value]
+        CanCommunicator.send_outputs(data)
+
+    @staticmethod
+    def send_outputs(data):
+        CanCommunicator.send_msg(10, data)
 
     @staticmethod
     def send_turnout_positions():
