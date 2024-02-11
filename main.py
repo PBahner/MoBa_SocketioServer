@@ -12,21 +12,21 @@ if CAN_ENABLED:
     import can
 
 
-class InputReference:  # contains all required information/addresses to access an PCF8574 input
+class PinReference:  # contains all required information/addresses to access an PCF8574 input or output
     def __init__(self,
-                 input_module,
-                 input_type,
-                 input_address,
-                 input_pin):
-        self.input_module = input_module
-        self.input_type = input_type
-        self.input_address = input_address
-        self.input_pin = input_pin
+                 module_id,
+                 interface_type,
+                 address,
+                 pin_no):
+        self.module_id = module_id
+        self.interface_type = interface_type
+        self.address = address
+        self.pin_no = pin_no
 
-    def compare(self, input_module, input_type, input_address):
-        return (input_module == self.input_module and
-                input_type == self.input_type and
-                input_address == self.input_address)
+    def compare(self, module_id, interface_type, address):
+        return (module_id == self.module_id and
+                interface_type == self.interface_type and
+                address == self.address)
 
 
 class Turnout:
@@ -75,13 +75,13 @@ class Turnout:
         self.target_pos = not self.current_pos
 
 
-turnouts = [Turnout(0, 0, 4, InputReference(0, 2, 0x21, 0), InputReference(0, 2, 0x21, 1)),
-            Turnout(1, 0, 3, InputReference(0, 2, 0x20, 7), InputReference(0, 2, 0x20, 6)),
-            Turnout(2, 0, 2, InputReference(0, 2, 0x20, 4), InputReference(0, 2, 0x20, 5)),
+turnouts = [Turnout(0, 0, 4, PinReference(0, 2, 0x21, 0), PinReference(0, 2, 0x21, 1)),
+            Turnout(1, 0, 3, PinReference(0, 2, 0x20, 7), PinReference(0, 2, 0x20, 6)),
+            Turnout(2, 0, 2, PinReference(0, 2, 0x20, 4), PinReference(0, 2, 0x20, 5)),
             Turnout(3, 1, 0),
             Turnout(4, 1, 1),
-            Turnout(5, 0, 1, InputReference(0, 2, 0x20, 2), InputReference(0, 2, 0x20, 3)),
-            Turnout(6, 0, 0, InputReference(0, 2, 0x20, 1), InputReference(0, 2, 0x20, 0))]
+            Turnout(5, 0, 1, PinReference(0, 2, 0x20, 2), PinReference(0, 2, 0x20, 3)),
+            Turnout(6, 0, 0, PinReference(0, 2, 0x20, 1), PinReference(0, 2, 0x20, 0))]
 
 
 class CanCommunicator:
@@ -145,10 +145,10 @@ class CanCommunicator:
                 if turnout.input_reference_plus is None or turnout.input_reference_plus is None:
                     continue
                 if turnout.input_reference_minus.compare(module_id, input_type, input_address):
-                    input_pin = (msg.data[2] >> turnout.input_reference_minus.input_pin) & 1
+                    input_pin = (msg.data[2] >> turnout.input_reference_minus.pin_no) & 1
                     turnout.set_input_pin_minus(input_pin)
                 if turnout.input_reference_plus.compare(module_id, input_type, input_address):
-                    input_pin = (msg.data[2] >> turnout.input_reference_plus.input_pin) & 1
+                    input_pin = (msg.data[2] >> turnout.input_reference_plus.pin_no) & 1
                     turnout.set_input_pin_plus(input_pin)
 
             response_data = {turnout.id: turnout.current_pos for turnout in turnouts}
@@ -159,9 +159,9 @@ class CanCommunicator:
             for requested_turnout in msg.data:
                 for count, input_reference in enumerate([turnouts[requested_turnout].input_reference_plus,
                                                          turnouts[requested_turnout].input_reference_minus]):
-                    data = [input_reference.input_module + input_reference.input_type << 4,
-                            input_reference.input_address,
-                            input_reference.input_pin,
+                    data = [input_reference.module_id + input_reference.interface_type << 4,
+                            input_reference.address,
+                            input_reference.pin_no,
                             count + (requested_turnout << 1)]  # first bit represents relevant turnout position
                     CanCommunicator.send_msg(2, data)
 
