@@ -74,6 +74,23 @@ class Turnout:
     def change_target_pos(self):
         self.target_pos = not self.current_pos
 
+    def get_current_pos_friendly(self):
+        return next((key for key, value in self.__pos.items() if value == self.current_pos), None)
+
+
+class TrackInterruption:
+    def __init__(self,
+                 global_number: int,
+                 section: int,
+                 output_reference: PinReference,
+                 required_turnout=None,
+                 required_turnout_pos=None):
+        self.global_number = global_number
+        self.section = section
+        self.output_reference = output_reference
+        self.required_turnout = required_turnout
+        self.required_turnout_pos = required_turnout_pos
+
 
 turnouts = [Turnout(0, 0, 4, PinReference(0, 2, 0x21, 0), PinReference(0, 2, 0x21, 1)),
             Turnout(1, 0, 3, PinReference(0, 2, 0x20, 7), PinReference(0, 2, 0x20, 6)),
@@ -82,6 +99,14 @@ turnouts = [Turnout(0, 0, 4, PinReference(0, 2, 0x21, 0), PinReference(0, 2, 0x2
             Turnout(4, 1, 1),
             Turnout(5, 0, 1, PinReference(0, 2, 0x20, 2), PinReference(0, 2, 0x20, 3)),
             Turnout(6, 0, 0, PinReference(0, 2, 0x20, 1), PinReference(0, 2, 0x20, 0))]
+
+trackInterruptions = [TrackInterruption(3, 2, PinReference(0, 2, 0x22, 0), turnouts[6], "+"),
+                      TrackInterruption(4, 2, PinReference(0, 2, 0x22, 1), turnouts[6], "-"),
+                      TrackInterruption(5, 2, PinReference(0, 2, 0x22, 2), turnouts[5], "+"),
+                      TrackInterruption(6, 1, PinReference(0, 2, 0x22, 3), turnouts[2], "+"),
+                      TrackInterruption(7, 1, PinReference(0, 2, 0x22, 4)),
+                      TrackInterruption(8, 1, PinReference(0, 2, 0x22, 6)),
+                      TrackInterruption(10, 1, PinReference(0, 2, 0x22, 7), turnouts[2], "-")]  # later on 0x23/pin0 ?
 
 
 class CanCommunicator:
@@ -217,6 +242,32 @@ class Esp32Communicator(socketio.Namespace):
             print("Weiche " + str(turnout) + " stellen")
         CanCommunicator.send_turnout_positions()
         Esp32Communicator.send_turnout_positions()
+
+    def on_track_interruptions_on(self, sid, data):
+        self.__on_track_interruptions_change(data, True)
+
+    def on_track_interruptions_off(self, sid, data):
+        self.__on_track_interruptions_change(data, False)
+
+    def __on_track_interruptions_change(self, data, edge: bool):
+        for turnout in data["data"]:
+            if turnout in [0, 1] and turnouts[0].current_pos != turnouts[1].current_pos:
+                track_number = 7+turnout  # Workaround: track number 7 or 8
+                track_section = 1
+                for index, track in enumerate(trackInterruptions):
+                    if track.global_number == track_number and track.section == track_section:
+                        self.__trigger_track(trackInterruptions[index], edge)
+            for track in trackInterruptions:
+                if track.required_turnout is None or track.required_turnout_pos is None:
+                    continue
+                match_turnout_id = track.required_turnout.id == turnout
+                match_turnout_pos = track.required_turnout_pos == turnouts[turnout].get_current_pos_friendly()
+                if match_turnout_id and match_turnout_pos:
+                    self.__trigger_track(track, edge)
+
+    def __trigger_track(self, track, edge: bool):
+        # print("setze Abschnitt", track.global_number, ".", track.section, "auf", edge)
+        CanCommunicator.write_i2c_pin(track.output_reference, edge)
 
     @staticmethod
     def updater():
