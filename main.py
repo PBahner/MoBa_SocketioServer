@@ -14,10 +14,10 @@ if CAN_ENABLED:
 
 class PinReference:  # contains all required information/addresses to access an PCF8574 input or output
     def __init__(self,
-                 module_id,
-                 interface_type,
-                 address,
-                 pin_no):
+                 module_id: int,
+                 interface_type: int,
+                 address: int,
+                 pin_no: int):
         self.module_id = module_id
         self.interface_type = interface_type
         self.address = address
@@ -30,17 +30,17 @@ class PinReference:  # contains all required information/addresses to access an 
 
 
 class Turnout:
-    __pos = {
+    __pos: {int: str} = {
         "+": False,
         "-": True,
         "": 2,
     }
 
-    def __init__(self, turnout_id,
-                 servo_module,
-                 servo_number,
-                 input_reference_plus=None,
-                 input_reference_minus=None):
+    def __init__(self, turnout_id: int,
+                 servo_module: int,
+                 servo_number: int,
+                 input_reference_plus: PinReference = None,
+                 input_reference_minus: PinReference = None):
         self.__input_pin_minus = None
         self.__input_pin_plus = None
         self.current_pos = self.__pos[""]
@@ -51,11 +51,11 @@ class Turnout:
         self.input_reference_plus = input_reference_plus
         self.input_reference_minus = input_reference_minus
 
-    def set_input_pin_minus(self, input_pin_minus):
+    def set_input_pin_minus(self, input_pin_minus: int):
         self.__input_pin_minus = input_pin_minus
         self.__update_current_pos()
 
-    def set_input_pin_plus(self, input_pin_plus):
+    def set_input_pin_plus(self, input_pin_plus: int):
         self.__input_pin_plus = input_pin_plus
         self.__update_current_pos()
 
@@ -74,7 +74,7 @@ class Turnout:
     def change_target_pos(self):
         self.target_pos = not self.current_pos
 
-    def get_current_pos_friendly(self):
+    def get_current_pos_friendly(self) -> str:
         return next((key for key, value in self.__pos.items() if value == self.current_pos), None)
 
 
@@ -83,8 +83,8 @@ class TrackInterruption:
                  global_number: int,
                  section: int,
                  output_reference: PinReference,
-                 required_turnout=None,
-                 required_turnout_pos=None):
+                 required_turnout: Turnout = None,
+                 required_turnout_pos: str = None):
         self.global_number = global_number
         self.section = section
         self.output_reference = output_reference
@@ -112,7 +112,7 @@ trackInterruptions = [TrackInterruption(3, 2, PinReference(0, 2, 0x22, 0), turno
 class CanCommunicator:
     bustype = 'socketcan'
     channel = 'can0'
-    i2c_value_storage = {}
+    i2c_value_storage: {int: {int: int}} = {}
 
     @staticmethod
     def bit_write(byte: int, position: int, value: bool) -> int:
@@ -124,7 +124,7 @@ class CanCommunicator:
             return byte & ~(1 << position)
 
     @staticmethod
-    def bools_to_bytes(data_list):
+    def bools_to_bytes(data_list: [int]) -> [int]:
         data_list = [b == 1 for b in data_list]
         output_byte = [0]
         byte_number = 0
@@ -137,12 +137,12 @@ class CanCommunicator:
         return output_byte
 
     @staticmethod
-    def request_inputs(module_id, input_type, input_address):
+    def request_inputs(module_id: int, input_type: int, input_address: int):
         data = [module_id + input_type << 4, input_address]
         CanCommunicator.send_msg(12, data)
 
     @staticmethod
-    def write_i2c_pin(output_reference: PinReference, output_value):
+    def write_i2c_pin(output_reference: PinReference, output_value: bool):
         module_id = output_reference.module_id
         output_type = output_reference.interface_type
         output_address = output_reference.address
@@ -162,7 +162,7 @@ class CanCommunicator:
         CanCommunicator.send_outputs(data)
 
     @staticmethod
-    def send_outputs(data):
+    def send_outputs(data: [int]):
         CanCommunicator.send_msg(10, data)
 
     @staticmethod
@@ -178,7 +178,7 @@ class CanCommunicator:
                     turnout.current_pos = turnout.target_pos
 
     @staticmethod
-    def send_msg(id, data):
+    def send_msg(id: int, data: [int]) -> bool:
         if not CAN_ENABLED:
             return True
         with can.interface.Bus(channel=CanCommunicator.channel,
@@ -236,20 +236,20 @@ class Esp32Communicator(socketio.Namespace):
     def on_disconnect(self, sid):
         print('[ESP] disconnect ', sid)
 
-    def on_change_turnouts(self, sid, data):
+    def on_change_turnouts(self, sid, data: [int]):
         for turnout in data["data"]:
             turnouts[turnout].change_target_pos()
             print("Weiche " + str(turnout) + " stellen")
         CanCommunicator.send_turnout_positions()
         Esp32Communicator.send_turnout_positions()
 
-    def on_track_interruptions_on(self, sid, data):
+    def on_track_interruptions_on(self, sid, data: [int]):
         self.__on_track_interruptions_change(data, True)
 
-    def on_track_interruptions_off(self, sid, data):
+    def on_track_interruptions_off(self, sid, data: [int]):
         self.__on_track_interruptions_change(data, False)
 
-    def __on_track_interruptions_change(self, data, edge: bool):
+    def __on_track_interruptions_change(self, data: [int], edge: bool):
         for turnout in data["data"]:
             if turnout in [0, 1] and turnouts[0].current_pos != turnouts[1].current_pos:
                 track_number = 7+turnout  # Workaround: track number 7 or 8
@@ -265,7 +265,7 @@ class Esp32Communicator(socketio.Namespace):
                 if match_turnout_id and match_turnout_pos:
                     self.__trigger_track(track, edge)
 
-    def __trigger_track(self, track, edge: bool):
+    def __trigger_track(self, track: TrackInterruption, edge: bool):
         # print("setze Abschnitt", track.global_number, ".", track.section, "auf", edge)
         CanCommunicator.write_i2c_pin(track.output_reference, edge)
 
