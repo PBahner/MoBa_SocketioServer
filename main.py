@@ -178,16 +178,16 @@ class CanCommunicator:
                     turnout.current_pos = turnout.target_pos
 
     @staticmethod
-    def send_msg(id: int, data: [int]) -> bool:
+    def send_msg(msg_id: int, data: [int]) -> bool:
         if not CAN_ENABLED:
             return True
         with can.interface.Bus(channel=CanCommunicator.channel,
                                bustype=CanCommunicator.bustype,
-                               bitrate=125000) as bus:
-            msg = can.Message(arbitration_id=id, data=data, is_extended_id=False)
+                               bitrate=125000) as can_bus:
+            msg = can.Message(arbitration_id=msg_id, data=data, is_extended_id=False)
             try:
-                bus.send(msg)
-                print(f"[CAN] Message sent on {bus.channel_info} id: {msg.arbitration_id} msg: {list(msg.data)}")
+                can_bus.send(msg)
+                print(f"[CAN] Message sent on {can_bus.channel_info} id: {msg.arbitration_id} msg: {list(msg.data)}")
                 return True
             except can.CanError:
                 print("[CAN] Message NOT sent")
