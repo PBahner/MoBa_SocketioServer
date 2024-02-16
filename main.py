@@ -1,6 +1,11 @@
 import threading
 import socketio
 import eventlet
+
+from railway.io_port import I2CPort
+from railway.track import TrackInterruption
+from railway.turnout import Turnout
+
 eventlet.monkey_patch()
 
 sio = socketio.Server(cors_allowed_origins='*')  # , logger=True, engineio_logger=True
@@ -11,102 +16,21 @@ CAN_ENABLED = True
 if CAN_ENABLED:
     import can
 
-
-class PinReference:  # contains all required information/addresses to access an PCF8574 input or output
-    def __init__(self,
-                 module_id: int,
-                 interface_type: int,
-                 address: int,
-                 pin_no: int):
-        self.module_id = module_id
-        self.interface_type = interface_type
-        self.address = address
-        self.pin_no = pin_no
-
-    def compare(self, module_id, interface_type, address):
-        return (module_id == self.module_id and
-                interface_type == self.interface_type and
-                address == self.address)
-
-
-class Turnout:
-    __pos: {int: str} = {
-        "+": False,
-        "-": True,
-        "": 2,
-    }
-
-    def __init__(self, turnout_id: int,
-                 servo_module: int,
-                 servo_number: int,
-                 input_reference_plus: PinReference = None,
-                 input_reference_minus: PinReference = None):
-        self.__input_pin_minus = None
-        self.__input_pin_plus = None
-        self.current_pos = self.__pos[""]
-        self.target_pos = self.__pos[""]
-        self.id = turnout_id
-        self.servo_module = servo_module
-        self.servo_number = servo_number
-        self.input_reference_plus = input_reference_plus
-        self.input_reference_minus = input_reference_minus
-
-    def set_input_pin_minus(self, input_pin_minus: int):
-        self.__input_pin_minus = input_pin_minus
-        self.__update_current_pos()
-
-    def set_input_pin_plus(self, input_pin_plus: int):
-        self.__input_pin_plus = input_pin_plus
-        self.__update_current_pos()
-
-    def __update_current_pos(self):
-        if self.__input_pin_minus == True and self.__input_pin_plus == False:
-            self.current_pos = self.__pos["-"]
-        elif self.__input_pin_minus == False and self.__input_pin_plus == True:
-            self.current_pos = self.__pos["+"]
-        else:
-            self.current_pos = self.__pos[""]
-
-        # set target pos as soon current pos is fetched
-        if self.target_pos == self.__pos[""]:
-            self.target_pos = self.current_pos
-
-    def change_target_pos(self):
-        self.target_pos = not self.current_pos
-
-    def get_current_pos_friendly(self) -> str:
-        return next((key for key, value in self.__pos.items() if value == self.current_pos), None)
-
-
-class TrackInterruption:
-    def __init__(self,
-                 global_number: int,
-                 section: int,
-                 output_reference: PinReference,
-                 required_turnout: Turnout = None,
-                 required_turnout_pos: str = None):
-        self.global_number = global_number
-        self.section = section
-        self.output_reference = output_reference
-        self.required_turnout = required_turnout
-        self.required_turnout_pos = required_turnout_pos
-
-
-turnouts = [Turnout(0, 0, 4, PinReference(0, 2, 0x21, 0), PinReference(0, 2, 0x21, 1)),
-            Turnout(1, 0, 3, PinReference(0, 2, 0x20, 7), PinReference(0, 2, 0x20, 6)),
-            Turnout(2, 0, 2, PinReference(0, 2, 0x20, 4), PinReference(0, 2, 0x20, 5)),
+turnouts = [Turnout(0, 0, 4, I2CPort(0, 2, 0x21, 0), I2CPort(0, 2, 0x21, 1)),
+            Turnout(1, 0, 3, I2CPort(0, 2, 0x20, 7), I2CPort(0, 2, 0x20, 6)),
+            Turnout(2, 0, 2, I2CPort(0, 2, 0x20, 4), I2CPort(0, 2, 0x20, 5)),
             Turnout(3, 1, 0),
             Turnout(4, 1, 1),
-            Turnout(5, 0, 1, PinReference(0, 2, 0x20, 2), PinReference(0, 2, 0x20, 3)),
-            Turnout(6, 0, 0, PinReference(0, 2, 0x20, 1), PinReference(0, 2, 0x20, 0))]
+            Turnout(5, 0, 1, I2CPort(0, 2, 0x20, 2), I2CPort(0, 2, 0x20, 3)),
+            Turnout(6, 0, 0, I2CPort(0, 2, 0x20, 1), I2CPort(0, 2, 0x20, 0))]
 
-trackInterruptions = [TrackInterruption(3, 2, PinReference(0, 2, 0x22, 0), turnouts[6], "+"),
-                      TrackInterruption(4, 2, PinReference(0, 2, 0x22, 1), turnouts[6], "-"),
-                      TrackInterruption(5, 2, PinReference(0, 2, 0x22, 2), turnouts[5], "+"),
-                      TrackInterruption(6, 1, PinReference(0, 2, 0x22, 3), turnouts[2], "+"),
-                      TrackInterruption(7, 1, PinReference(0, 2, 0x22, 4)),
-                      TrackInterruption(8, 1, PinReference(0, 2, 0x22, 6)),
-                      TrackInterruption(10, 1, PinReference(0, 2, 0x22, 7), turnouts[2], "-")]  # later on 0x23/pin0 ?
+trackInterruptions = [TrackInterruption(3, 2, I2CPort(0, 2, 0x22, 0), turnouts[6], "+"),
+                      TrackInterruption(4, 2, I2CPort(0, 2, 0x22, 1), turnouts[6], "-"),
+                      TrackInterruption(5, 2, I2CPort(0, 2, 0x22, 2), turnouts[5], "+"),
+                      TrackInterruption(6, 1, I2CPort(0, 2, 0x22, 3), turnouts[2], "+"),
+                      TrackInterruption(7, 1, I2CPort(0, 2, 0x22, 4)),
+                      TrackInterruption(8, 1, I2CPort(0, 2, 0x22, 6)),
+                      TrackInterruption(10, 1, I2CPort(0, 2, 0x22, 7), turnouts[2], "-")]  # later on 0x23/pin0 ?
 
 
 class CanCommunicator:
@@ -142,7 +66,7 @@ class CanCommunicator:
         CanCommunicator.send_msg(12, data)
 
     @staticmethod
-    def write_i2c_pin(output_reference: PinReference, output_value: bool):
+    def write_i2c_pin(output_reference: I2CPort, output_value: bool):
         module_id = output_reference.module_id
         output_type = output_reference.interface_type
         output_address = output_reference.address
