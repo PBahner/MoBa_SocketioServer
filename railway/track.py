@@ -1,12 +1,12 @@
-from railway.io_port import I2CPort
-from railway.turnout import Turnout
+from .io_port import I2CPin
+from .turnout import Turnout
 
 
 class TrackInterruption:
     def __init__(self,
                  global_number: int,
                  section: int,
-                 output_reference: I2CPort,
+                 output_reference: I2CPin,
                  required_turnout: Turnout = None,
                  required_turnout_pos: str = None):
         self.global_number = global_number

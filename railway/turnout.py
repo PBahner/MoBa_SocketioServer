@@ -1,4 +1,4 @@
-from railway.io_port import I2CPort
+from .io_port import I2CPin
 
 
 class Turnout:
@@ -11,8 +11,8 @@ class Turnout:
     def __init__(self, turnout_id: int,
                  servo_module: int,
                  servo_number: int,
-                 input_reference_plus: I2CPort = None,
-                 input_reference_minus: I2CPort = None):
+                 input_reference_plus: I2CPin = None,
+                 input_reference_minus: I2CPin = None):
         self.__input_pin_minus = None
         self.__input_pin_plus = None
         self.current_pos = self.__pos[""]
