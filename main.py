@@ -48,11 +48,11 @@ class Esp32Communicator(socketio.Namespace):
             print("Weiche " + str(turnout) + " stellen")
 
         msg = messages.DistributeTargetTurnoutPositionsMessage(turnouts)
-        if can_messenger.publish(msg):
-            # only for testing (change turnout position virtually)
-            for turnout in turnouts:
-                if turnout.input_reference_minus is None or turnout.input_reference_plus is None or not CAN_ENABLED:
-                    turnout.current_pos = turnout.target_pos
+        can_messenger.publish(msg)
+        # only for testing (change turnout position virtually)
+        for turnout in turnouts:
+            if turnout.input_reference_minus is None or turnout.input_reference_plus is None or not CAN_ENABLED:
+                turnout.current_pos = turnout.target_pos
 
         Esp32Communicator.send_turnout_positions()
 
