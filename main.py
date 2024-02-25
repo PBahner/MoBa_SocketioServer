@@ -14,7 +14,7 @@ app = socketio.WSGIApp(sio)
 
 
 turnouts = [Turnout(0, 0, 4, I2CPin(0, 2, 0x21, 0), I2CPin(0, 2, 0x21, 1)),
-            Turnout(1, 0, 3, I2CPin(0, 2, 0x20, 7), I2CPin(0, 2, 0x20, 6)),
+            Turnout(1, 0, 3, I2CPin(0, 2, 0x20, 6), I2CPin(0, 2, 0x20, 7)),
             Turnout(2, 0, 2, I2CPin(0, 2, 0x20, 4), I2CPin(0, 2, 0x20, 5)),
             Turnout(3, 1, 0),
             Turnout(4, 1, 1),
