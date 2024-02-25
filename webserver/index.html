@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modellbahn Steuerung</title>
+    <style>
+        .button-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .switch-button {
+            padding: 10px;
+            margin: 15px 10px;
+            border: none;
+            color: white;
+            font: bold 18px bahnschrift,arial;
+            border-radius: 6px;
+            &.pos-minus {
+                background-color: #772222;
+                &:hover {
+                    background-color: #600000;
+                }
+            }
+            &.pos-plus {
+                background-color: #227722;
+                &:hover {
+                    background-color: #006000;
+                }
+            }
+            &:not(.pos-plus):not(.pos-minus) {
+                background-color: #777777;
+                &:hover {
+                    background-color: #606060;
+                }
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="button-wrapper">
+        <button class="switch-button" id="switch-1">Weiche 1</button>
+        <button class="switch-button" id="switch-2">Weiche 2</button>
+        <button class="switch-button" id="switch-3">Weiche 3</button>
+        <button class="switch-button" id="switch-4">Weiche 4</button>
+        <button class="switch-button" id="switch-5">Weiche 5</button>
+        <button class="switch-button" id="switch-6">Weiche 6</button>
+        <button class="switch-button" id="switch-7">Weiche 7</button>
+    </div>
+        <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
+        <script>eruda.init();</script>
+<!--    <script src="https://cdn.socket.io/3.1.3/socket.io.min.js" integrity="sha384-cPwlPLvBTa3sKAgddT6krw0cJat7egBga3DJepJyrLl4Q9/5WLra3rrnMcyTyOnh" crossorigin="anonymous"></script>-->
+    <script src="socket.io.min.js" crossorigin="anonymous"></script>
+    <script>
+    const socket = io('http://socketio-host:5000');
+
+    socket.on('connect', () => {
+        console.log("socket connected");
+    });
+
+    function drawSwitchPositions (data) {
+        // data["data"].forEach((element) => console.log(element))
+        console.log(data["data"])
+        Object.keys(data["data"]).forEach((turnout) => {
+            turnout = parseInt(turnout)
+            switch (data["data"][turnout]) {
+                case true:
+                    document.getElementById("switch-"+(turnout+1)).classList.remove("pos-plus")
+                    document.getElementById("switch-"+(turnout+1)).classList.add("pos-minus")
+                    break
+                case false:
+                    document.getElementById("switch-"+(turnout+1)).classList.remove("pos-minus")
+                    document.getElementById("switch-"+(turnout+1)).classList.add("pos-plus")
+                    break
+                default:
+                    document.getElementById("switch-"+(turnout+1)).classList.remove("pos-minus")
+                    document.getElementById("switch-"+(turnout+1)).classList.remove("pos-plus")
+                    break
+            }
+
+        })
+    }
+
+    socket.on('update_switch_positions', drawSwitchPositions)
+    socket.on('init_switch_positions', drawSwitchPositions)
+
+    const buttons = document.getElementsByClassName("switch-button")
+    for (const button of buttons) {
+        button.addEventListener('click', function (event) {
+            const turnout_id = event.target.id.split('-')[1] - 1
+            socket.emit("change_turnouts", {"data": [turnout_id]})
+            console.log(event.target.id)
+        })
+    }
+    </script>
+</body>
+</html>

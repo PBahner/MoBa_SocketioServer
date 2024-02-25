@@ -8,6 +8,7 @@ from railway import Turnout, TrackInterruption
 from railway import I2CPin, IOPort
 
 eventlet.monkey_patch()
+from webserver import *
 
 sio = socketio.Server(cors_allowed_origins='*')  # , logger=True, engineio_logger=True
 app = socketio.WSGIApp(sio)
@@ -47,11 +48,11 @@ class Esp32Communicator(socketio.Namespace):
             print("Weiche " + str(turnout) + " stellen")
 
         msg = messages.DistributeTargetTurnoutPositionsMessage(turnouts)
-        if can_messenger.publish(msg):
-            # only for testing (change turnout position virtually)
-            for turnout in turnouts:
-                if turnout.input_reference_minus is None or turnout.input_reference_plus is None or not CAN_ENABLED:
-                    turnout.current_pos = turnout.target_pos
+        can_messenger.publish(msg)
+        # only for testing (change turnout position virtually)
+        for turnout in turnouts:
+            if turnout.input_reference_minus is None or turnout.input_reference_plus is None or not CAN_ENABLED:
+                turnout.current_pos = turnout.target_pos
 
         Esp32Communicator.send_turnout_positions()
 
@@ -108,6 +109,10 @@ if __name__ == '__main__':
     # can_messenger._CanBus__receive_event(msg)
     # msg = can.Message(arbitration_id=11, data=[32, 0x20, 4])
     # can_messenger._CanBus__receive_event(msg)
+
+    # initialize webserver thread
+    local_webserver = threading.Thread(target=start_webserver, daemon=False)
+    local_webserver.start()
 
     # socketio to ESP32
     sio.register_namespace(Esp32Communicator())
