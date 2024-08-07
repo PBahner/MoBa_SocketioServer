@@ -8,7 +8,7 @@ from railway import Turnout, TrackInterruption
 from railway import I2CPin, IOPort
 
 eventlet.monkey_patch()
-from webserver import *
+import webserver
 
 sio = socketio.Server(cors_allowed_origins='*')  # , logger=True, engineio_logger=True
 app = socketio.WSGIApp(sio)
@@ -111,7 +111,7 @@ if __name__ == '__main__':
     # can_messenger._CanBus__receive_event(msg)
 
     # initialize webserver thread
-    local_webserver = threading.Thread(target=start_webserver, daemon=False)
+    local_webserver = threading.Thread(target=webserver.start_webserver, daemon=False)
     local_webserver.start()
 
     # socketio to ESP32
