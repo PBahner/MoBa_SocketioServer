@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Union
 
 if TYPE_CHECKING:
     from .messages.message import OutboundMessage
@@ -15,6 +15,6 @@ class Messenger:
         # must be defined in subclass
         raise NotImplemented
 
-    def subscribe(self, msg_id: int, handler: "MessageHandler"):
+    def subscribe(self, msg_id: Union[int, str], handler: "MessageHandler"):
         self._message_handlers[msg_id] = handler
-        print("[MSG] Handler", type(handler).__name__ ,"registered for msg_id", msg_id)
+        print("[MSG] Handler", type(handler).__name__, "registered for msg_id", msg_id)

@@ -1,9 +1,10 @@
+from socketio_mssgr import SocketIO
 from .. import messages
 from .handler import MessageHandler
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from ..messenger import Messenger
+    from ..mssgr import Messenger
     from railway.turnout import Turnout
     import socketio.server
 
@@ -14,23 +15,23 @@ class TurnoutInputRequestHandler(MessageHandler):
         self.turnouts = turnouts
 
     def handle(self, data: list[int]):
-        message = messages.TurnoutInputRequestMessage(data)
+        message = messages.canbus.TurnoutInputRequestMessage(data)
         message.decode()
         for requested_turnout in message.requested_turnouts:
             for count, input_reference in enumerate([self.turnouts[requested_turnout].input_reference_plus,
                                                      self.turnouts[requested_turnout].input_reference_minus]):
-                response_msg = messages.DistributeTurnoutIOReference(requested_turnout, input_reference, count)
+                response_msg = messages.canbus.DistributeTurnoutIOReference(requested_turnout, input_reference, count)
                 self.messenger.publish(response_msg)
 
 
 class ReceiveInputUpdatesHandler(MessageHandler):
-    def __init__(self, messenger: "Messenger", turnouts: list["Turnout"], sio: "socketio.Server"):
+    def __init__(self, messenger: "Messenger", turnouts: list["Turnout"], sio_messenger: "SocketIO"):
         super().__init__(messenger)
         self.turnouts = turnouts
-        self.sio = sio
+        self.sio_messenger = sio_messenger
 
     def handle(self, data: list[int]):
-        message = messages.ReceiveInputUpdatesMessage(data)
+        message = messages.canbus.ReceiveInputUpdatesMessage(data)
         message.decode()
 
         for turnout in self.turnouts:
@@ -54,4 +55,5 @@ class ReceiveInputUpdatesHandler(MessageHandler):
         # ToDo: create method for response in EspCommunicator
         response_data = {turnout.id: turnout.current_pos for turnout in self.turnouts}
         print("[ESP] emit: update_switch_positions", response_data)
-        self.sio.emit("update_switch_positions", {'data': response_data})
+        msg = messages.socketio.DistributeCurrentTurnoutPositionsMessage(self.turnouts)
+        self.sio_messenger.publish(msg)

@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from ..messenger import Messenger
+    from ..mssgr import Messenger
 
 
 class MessageHandler:
