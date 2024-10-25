@@ -30,6 +30,8 @@ class CanBus(Messenger):
                                     bitrate=self.bitrate)
             notifier = can.Notifier(bus, [self.__receive_event])
         except (OSError, NameError):
+            global CAN_ENABLED
+            CAN_ENABLED = False
             print("[CAN] bus not available")
 
     def publish(self, msg: "OutboundMessage") -> bool:

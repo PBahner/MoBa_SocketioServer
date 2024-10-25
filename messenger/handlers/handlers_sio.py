@@ -1,6 +1,6 @@
+import messenger.canbus_mssgr
 from .. import messages
 from .handler import MessageHandler
-from messenger.canbus_mssgr import CAN_ENABLED
 from main import Esp32Communicator
 
 from typing import TYPE_CHECKING
@@ -30,7 +30,8 @@ class TurnoutChangeRequestHandler(MessageHandler):
         self.can_messenger.publish(msg)
         # only for testing (change turnout position virtually)
         for turnout in self.turnouts:
-            if turnout.input_reference_minus is None or turnout.input_reference_plus is None or not CAN_ENABLED:
+            if (turnout.input_reference_minus is None or turnout.input_reference_plus is None
+                    or not messenger.canbus_mssgr.CAN_ENABLED):
                 turnout.current_pos = turnout.target_pos
 
         Esp32Communicator.send_turnout_positions()
