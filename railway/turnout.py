@@ -15,6 +15,7 @@ class Turnout:
                  input_reference_minus: I2CPin = None):
         self.__input_pin_minus = None
         self.__input_pin_plus = None
+        self.__locked = 0
         self.current_pos = self.__pos[""]
         self.target_pos = self.__pos[""]
         self.id = turnout_id
@@ -44,7 +45,14 @@ class Turnout:
             self.target_pos = self.current_pos
 
     def change_target_pos(self):
-        self.target_pos = not self.current_pos
+        if not self.__locked:
+            self.target_pos = not self.current_pos
 
     def get_current_pos_friendly(self) -> str:
         return next((key for key, value in self.__pos.items() if value == self.current_pos), None)
+
+    def lock(self):
+        self.__locked += 1
+
+    def unlock(self):
+        self.__locked -= 1 if self.__locked else 0

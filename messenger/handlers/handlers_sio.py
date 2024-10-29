@@ -47,7 +47,7 @@ class TrackInterruptionChangeHandler(MessageHandler):
         self.track_interruptions = track_interruptions
 
     def handle(self, data):
-        for turnout in data["data"]:
+        for turnout in data["data"]:  # ToDo: use msg.decode()
             if turnout in [0, 1] and self.turnouts[0].current_pos == self.turnouts[1].current_pos:
                 track_number = 7+turnout  # Workaround: track number 7 or 8
                 track_section = 1
@@ -63,6 +63,10 @@ class TrackInterruptionChangeHandler(MessageHandler):
                     self.__trigger_track(track, self.edge)
 
     def __trigger_track(self, track: "TrackInterruption", edge: bool):
+        if edge:
+            track.required_turnout.lock()
+        else:
+            track.required_turnout.unlock()
         track.state = edge
         msg = messages.canbus.WriteI2CPortMessage(track.output_reference, edge)
         self.can_messenger.publish(msg)
