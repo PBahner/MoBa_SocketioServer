@@ -52,6 +52,7 @@ if __name__ == '__main__':
     Esp32Communicator.can_messenger = can_messenger
     Esp32Communicator.sio_messenger = sio_messenger
     Esp32Communicator.turnouts = turnouts
+    Esp32Communicator.track_interruptions = trackInterruptions
 
     # Testing
     # msg = can.Message(arbitration_id=11, data=[32, 0x20, 1])

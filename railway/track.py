@@ -14,3 +14,4 @@ class TrackInterruption:
         self.output_reference = output_reference
         self.required_turnout = required_turnout
         self.required_turnout_pos = required_turnout_pos
+        self.state = False

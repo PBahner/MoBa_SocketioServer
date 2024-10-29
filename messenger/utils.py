@@ -7,6 +7,7 @@ from railway import IOPort
 if TYPE_CHECKING:
     import mssgr
     from railway import Turnout
+    from railway.track import TrackInterruption
 
 
 def bit_write(byte: int, position: int, value: bool) -> int:
@@ -35,11 +36,13 @@ class Esp32Communicator:
     can_messenger: "mssgr.Messenger" = None
     sio_messenger: "mssgr.Messenger" = None
     turnouts: List["Turnout"] = None
+    track_interruptions: List["TrackInterruption"] = None
 
     @staticmethod
     def updater():
         Esp32Communicator.send_turnout_positions()
-        timer = threading.Timer(0.2, Esp32Communicator.updater)
+        Esp32Communicator.send_track_interruptions()
+        timer = threading.Timer(0.05, Esp32Communicator.updater)
         timer.start()
 
     @staticmethod
@@ -50,4 +53,9 @@ class Esp32Communicator:
         msg = messages.canbus.RequestInputsMessage(IOPort(0, 2, 0x21))
         Esp32Communicator.can_messenger.publish(msg)
         msg = messages.socketio.DistributeCurrentTurnoutPositionsMessage(Esp32Communicator.turnouts)
+        Esp32Communicator.sio_messenger.publish(msg)
+
+    @staticmethod
+    def send_track_interruptions():
+        msg = messages.socketio.DistributeCurrentTrackInterruptionsMessage(Esp32Communicator.track_interruptions)
         Esp32Communicator.sio_messenger.publish(msg)

@@ -63,6 +63,7 @@ class TrackInterruptionChangeHandler(MessageHandler):
                     self.__trigger_track(track, self.edge)
 
     def __trigger_track(self, track: "TrackInterruption", edge: bool):
+        track.state = edge
         msg = messages.canbus.WriteI2CPortMessage(track.output_reference, edge)
         self.can_messenger.publish(msg)
 
