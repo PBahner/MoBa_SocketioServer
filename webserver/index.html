@@ -61,15 +61,15 @@
 
     function drawSwitchPositions (data) {
         // data["data"].forEach((element) => console.log(element))
-        console.log(data["data"])
+        // console.log(data["data"])
         Object.keys(data["data"]).forEach((turnout) => {
             turnout = parseInt(turnout)
             switch (data["data"][turnout]) {
-                case true:
+                case 1:
                     document.getElementById("switch-"+(turnout+1)).classList.remove("pos-plus")
                     document.getElementById("switch-"+(turnout+1)).classList.add("pos-minus")
                     break
-                case false:
+                case 0:
                     document.getElementById("switch-"+(turnout+1)).classList.remove("pos-minus")
                     document.getElementById("switch-"+(turnout+1)).classList.add("pos-plus")
                     break
