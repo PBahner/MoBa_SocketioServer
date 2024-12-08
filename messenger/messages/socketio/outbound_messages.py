@@ -1,4 +1,4 @@
-from messages.message import OutboundMessage
+from ..message import OutboundMessage
 
 from typing import TYPE_CHECKING, Dict
 if TYPE_CHECKING:

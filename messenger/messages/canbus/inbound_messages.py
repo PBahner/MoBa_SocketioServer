@@ -1,4 +1,4 @@
-from messages.message import InboundMessage
+from ..message import InboundMessage
 
 
 class TurnoutInputRequestMessage(InboundMessage):

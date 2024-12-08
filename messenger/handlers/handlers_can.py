@@ -1,4 +1,4 @@
-from socketio_mssgr import SocketIO
+from ..socketio_mssgr import SocketIO
 from .. import messages
 from .handler import MessageHandler
 

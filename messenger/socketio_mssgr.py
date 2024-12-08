@@ -1,6 +1,6 @@
-import messages.socketio
-from utils import Esp32Communicator
-from mssgr import Messenger
+from . import messages
+from .utils import Esp32Communicator
+from .mssgr import Messenger
 import socketio
 import eventlet
 

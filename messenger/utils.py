@@ -1,5 +1,5 @@
 import threading
-import messages
+from . import messages
 
 from typing import TYPE_CHECKING, List
 from railway import IOPort

@@ -1,5 +1,5 @@
-from messages.message import OutboundMessage
-from utils import bit_write
+from ..message import OutboundMessage
+from ...utils import bit_write
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:

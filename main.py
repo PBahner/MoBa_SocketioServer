@@ -6,7 +6,7 @@ from messenger.socketio_mssgr import SocketIO
 from messenger import handlers
 from railway import Turnout, TrackInterruption
 from railway import I2CPin
-from utils import Esp32Communicator
+from messenger.utils import Esp32Communicator
 
 import webserver
 
