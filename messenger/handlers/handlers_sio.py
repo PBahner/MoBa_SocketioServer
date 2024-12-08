@@ -63,10 +63,11 @@ class TrackInterruptionChangeHandler(MessageHandler):
                     self.__trigger_track(track, self.edge)
 
     def __trigger_track(self, track: "TrackInterruption", edge: bool):
-        if edge:
-            track.required_turnout.lock()
-        else:
-            track.required_turnout.unlock()
+        if track.required_turnout is not None:
+            if edge:
+                track.required_turnout.lock()
+            else:
+                track.required_turnout.unlock()
         track.state = edge
         msg = messages.canbus.WriteI2CPortMessage(track.output_reference, edge)
         self.can_messenger.publish(msg)
