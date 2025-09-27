@@ -2,7 +2,7 @@ import threading
 import socketio
 
 from messenger.canbus_mssgr import CanBus
-from messenger.socketio_mssgr import SocketIO
+from messenger.websocket_mssgr import WebSocketMessenger
 from messenger import handlers
 from railway import Turnout, TrackInterruption
 from railway import I2CPin
@@ -33,24 +33,24 @@ trackInterruptions = [TrackInterruption(3, 2, I2CPin(0, 2, 0x22, 0), turnouts[6]
 
 if __name__ == '__main__':
     can_messenger = CanBus()
-    sio_messenger = SocketIO(turnouts)
+    websockets_messenger = WebSocketMessenger(turnouts)
 
     can_messenger.subscribe(3, handlers.TurnoutInputRequestHandler(can_messenger, turnouts))
-    can_messenger.subscribe(11, handlers.ReceiveInputUpdatesHandler(can_messenger, turnouts, sio_messenger))
-    sio_messenger.subscribe(
+    can_messenger.subscribe(11, handlers.ReceiveInputUpdatesHandler(can_messenger, turnouts, websockets_messenger))
+    websockets_messenger.subscribe(
         'change_turnouts',
-        handlers.TurnoutChangeRequestHandler(sio_messenger, can_messenger, turnouts)
+        handlers.TurnoutChangeRequestHandler(websockets_messenger, can_messenger, turnouts)
     )
-    sio_messenger.subscribe(
+    websockets_messenger.subscribe(
         'track_interruptions_on',
-        handlers.TrackInterruptionOnRequestHandler(sio_messenger, can_messenger, turnouts, trackInterruptions)
+        handlers.TrackInterruptionOnRequestHandler(websockets_messenger, can_messenger, turnouts, trackInterruptions)
     )
-    sio_messenger.subscribe(
+    websockets_messenger.subscribe(
         'track_interruptions_off',
-        handlers.TrackInterruptionOffRequestHandler(sio_messenger, can_messenger, turnouts, trackInterruptions)
+        handlers.TrackInterruptionOffRequestHandler(websockets_messenger, can_messenger, turnouts, trackInterruptions)
     )
     Esp32Communicator.can_messenger = can_messenger
-    Esp32Communicator.sio_messenger = sio_messenger
+    Esp32Communicator.sio_messenger = websockets_messenger
     Esp32Communicator.turnouts = turnouts
     Esp32Communicator.track_interruptions = trackInterruptions
 
@@ -64,4 +64,4 @@ if __name__ == '__main__':
     local_webserver = threading.Thread(target=webserver.start_webserver, daemon=False)
     local_webserver.start()
 
-    sio_messenger.start()
+    websockets_messenger.start()

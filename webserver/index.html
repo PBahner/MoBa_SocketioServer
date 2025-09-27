@@ -50,49 +50,73 @@
     </div>
         <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
         <script>eruda.init();</script>
-<!--    <script src="https://cdn.socket.io/3.1.3/socket.io.min.js" integrity="sha384-cPwlPLvBTa3sKAgddT6krw0cJat7egBga3DJepJyrLl4Q9/5WLra3rrnMcyTyOnh" crossorigin="anonymous"></script>-->
-    <script src="socket.io.min.js" crossorigin="anonymous"></script>
     <script>
-    const socket = io('http://socketio-host:5000');
+        // Connect to raw WebSocket server
+        const ws = new WebSocket("ws://socketio-host:5000");
 
-    socket.on('connect', () => {
-        console.log("socket connected");
-    });
+        ws.onopen = () => {
+            console.log("WebSocket connected");
+        };
 
-    function drawSwitchPositions (data) {
-        // data["data"].forEach((element) => console.log(element))
-        // console.log(data["data"])
-        Object.keys(data["data"]).forEach((turnout) => {
-            turnout = parseInt(turnout)
-            switch (data["data"][turnout]) {
-                case 1:
-                    document.getElementById("switch-"+(turnout+1)).classList.remove("pos-plus")
-                    document.getElementById("switch-"+(turnout+1)).classList.add("pos-minus")
-                    break
-                case 0:
-                    document.getElementById("switch-"+(turnout+1)).classList.remove("pos-minus")
-                    document.getElementById("switch-"+(turnout+1)).classList.add("pos-plus")
-                    break
-                default:
-                    document.getElementById("switch-"+(turnout+1)).classList.remove("pos-minus")
-                    document.getElementById("switch-"+(turnout+1)).classList.remove("pos-plus")
-                    break
+        ws.onclose = () => {
+            console.log("WebSocket disconnected");
+        };
+
+        ws.onerror = (error) => {
+            console.error("WebSocket error:", error);
+        };
+
+        ws.onmessage = (event) => {
+            try {
+                const message = JSON.parse(event.data);
+
+                // expect messages with structure like: { "msg_id": "...", "data": {...} }
+                if (message.msg_id === "update_switch_positions" ||
+                    message.msg_id === "init_switch_positions") {
+                    drawSwitchPositions(message);
+                }
+            } catch (err) {
+                console.error("Invalid message:", event.data, err);
             }
+        };
 
-        })
-    }
+        function drawSwitchPositions(data) {
+            Object.keys(data["data"]).forEach((turnout) => {
+                turnout = parseInt(turnout);
+                const element = document.getElementById("switch-" + (turnout + 1));
 
-    socket.on('update_switch_positions', drawSwitchPositions)
-    socket.on('init_switch_positions', drawSwitchPositions)
+                switch (data["data"][turnout]) {
+                    case 1:
+                        element.classList.remove("pos-plus");
+                        element.classList.add("pos-minus");
+                        break;
+                    case 0:
+                        element.classList.remove("pos-minus");
+                        element.classList.add("pos-plus");
+                        break;
+                    default:
+                        element.classList.remove("pos-minus");
+                        element.classList.remove("pos-plus");
+                        break;
+                }
+            });
+        }
 
-    const buttons = document.getElementsByClassName("switch-button")
-    for (const button of buttons) {
-        button.addEventListener('click', function (event) {
-            const turnout_id = event.target.id.split('-')[1] - 1
-            socket.emit("change_turnouts", {"data": [turnout_id]})
-            console.log(event.target.id)
-        })
-    }
+        // Handle button clicks and send messages
+        const buttons = document.getElementsByClassName("switch-button");
+        for (const button of buttons) {
+            button.addEventListener("click", (event) => {
+                const turnout_id = event.target.id.split("-")[1] - 1;
+
+                const message = {
+                    msg_id: "change_turnouts",
+                    data: [turnout_id]
+                };
+
+                ws.send(JSON.stringify(message));
+                console.log("Sent:", message);
+            });
+        }
     </script>
 </body>
 </html>

@@ -1,5 +1,5 @@
 import messenger.canbus_mssgr
-from .. import messages
+from messenger import messages
 from .handler import MessageHandler
 from main import Esp32Communicator
 
@@ -47,7 +47,7 @@ class TrackInterruptionChangeHandler(MessageHandler):
         self.track_interruptions = track_interruptions
 
     def handle(self, data):
-        for turnout in data["data"]:  # ToDo: use msg.decode()
+        for turnout in data:  # ToDo: use msg.decode()
             if turnout in [0, 1] and self.turnouts[0].current_pos == self.turnouts[1].current_pos:
                 track_number = 7+turnout  # Workaround: track number 7 or 8
                 track_section = 1

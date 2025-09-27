@@ -42,7 +42,7 @@ class CanBus(Messenger):
                 bus_msg = can.Message(arbitration_id=msg.msg_id, data=msg.encode(), is_extended_id=False)
                 try:
                     can_bus.send(bus_msg)
-                    print(f"[CAN] Message sent on {can_bus.channel_info} id: {bus_msg.arbitration_id} msg: {list(bus_msg.data)}")
+                    # print(f"[CAN] Message sent on {can_bus.channel_info} id: {bus_msg.arbitration_id} msg: {list(bus_msg.data)}")
                     return True
                 except can.CanError:
                     print("[CAN] Message NOT sent")
@@ -54,7 +54,7 @@ class CanBus(Messenger):
             return True
 
     def __receive_event(self, msg: "can.Message"):
-        print("[CAN] received id:", msg.arbitration_id, "data", list(msg.data))
+        # print("[CAN] received id:", msg.arbitration_id, "data", list(msg.data))
         msg_handler = self._message_handlers.get(msg.arbitration_id)
         if msg_handler:
             msg_handler.handle(msg.data)
