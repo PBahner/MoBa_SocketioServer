@@ -29,6 +29,7 @@ class ReceiveInputUpdatesHandler(MessageHandler):
         super().__init__(messenger)
         self.turnouts = turnouts
         self.sio_messenger = sio_messenger
+        self.__prev_turnout_states = {turnout.id: turnout.current_pos for turnout in turnouts}
 
     def handle(self, data: list[int]):
         message = messages.canbus.ReceiveInputUpdatesMessage(data)
@@ -54,6 +55,9 @@ class ReceiveInputUpdatesHandler(MessageHandler):
 
         # ToDo: create method for response in EspCommunicator
         response_data = {turnout.id: turnout.current_pos for turnout in self.turnouts}
+        if self.__prev_turnout_states == response_data:
+            return  # no change
         print("[ESP] emit: update_switch_positions", response_data)
         msg = messages.socketio.DistributeCurrentTurnoutPositionsMessage(self.turnouts)
         self.sio_messenger.publish(msg)
+        self.__prev_turnout_states = response_data
